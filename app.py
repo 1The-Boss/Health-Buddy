@@ -3,6 +3,9 @@ from backend import bot
 
 st.set_page_config(page_title="Health Buddy", page_icon="./logo.png", layout="centered")
 
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
 SYSTEM_PROMPT = """You are a general health & wellness assistant.
 - Answer only general wellness/health education questions (sleep, nutrition, exercise, hydration, BMI, etc.)
 - Never diagnose, prescribe, or give medical advice.
@@ -10,20 +13,25 @@ SYSTEM_PROMPT = """You are a general health & wellness assistant.
 - Use bullet points to break down data or lists.
 - For symptoms/conditions, direct user to consult a doctor.
 """
-
 st.markdown("""
 <style>
 .centered-header {
-    text-align: center;
-    margin-top: 3rem;
-    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 1.5rem;
+    margin-bottom: 0.3rem;
 }
 .centered-header h1 {
-    font-size: 2.2rem;
-    font-weight: 500;
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 3.2rem;
+    font-weight: 700;
+    margin: 0;
+}
+.centered-header img {
+    height: 65px;
+    width: 65px;
 }
 .pill-row {
     display: flex;
@@ -39,6 +47,7 @@ div.stButton > button {
     color: #e5e7eb;
     border: 1px solid rgba(255,255,255,0.1);
     font-size: 14px;
+    font-family: 'Times New Roman', Times, serif;
 }
 div.stButton > button:hover {
     border-color: rgba(139,92,246,0.6);
@@ -47,22 +56,27 @@ div.stButton > button:hover {
 </style>
 """, unsafe_allow_html=True)
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+if len(st.session_state.messages) == 0:
+    st.markdown("<style>[data-testid='stAppViewContainer']{overflow:hidden!important;height:100vh;}</style>", unsafe_allow_html=True)
 
 quick_prompt = None
 
-# ---- CENTERED HERO (only when empty) ----
 if len(st.session_state.messages) == 0:
     col1, col2, col3 = st.columns([1, 3, 1])
     with col2:
-        st.image("./logo.png", width=50)
+        import base64
+        with open("./logo.png", "rb") as f:
+            logo_b64 = base64.b64encode(f.read()).decode()
+
         st.markdown(
-            "<div class='centered-header'><h1>Health Buddy</h1></div>",
+            f"""<div class='centered-header'>
+                <img src="data:image/png;base64,{logo_b64}">
+                <h1>Health Buddy</h1>
+            </div>""",
             unsafe_allow_html=True
         )
         st.markdown(
-            "<p style='text-align:center; color:#9ca3af; margin-top:-1.5rem;'>Your AI health & wellness companion</p>",
+            "<p style='text-align:center; font-family: Times New Roman, serif; color:#9ca3af; margin-top:0;'>Your AI health & wellness companion</p>",
             unsafe_allow_html=True
         )
 
@@ -73,14 +87,14 @@ if len(st.session_state.messages) == 0:
         if submitted and typed:
             quick_prompt = typed
 
-        # ---- PILL BUTTONS ----
+        # PILL BUTTONS
         cards = [
-            ("😴 Sleep", "What are some simple tips for better sleep hygiene?"),
+            ("😴 Sleep", "Simple tips for better sleep"),
             ("💧 Hydration", "How much water should I drink daily?"),
             ("⚖️ BMI", "What is BMI and how is it calculated?"),
             ("🏃 Exercise", "What are simple exercises for staying fit?"),
-            ("🥗 Nutrition", "What are the basics of good nutrition?"),
-            ("🧠 Stress", "What are some tips to manage stress and mental wellness?"),
+            ("🥗 Nutrition", "Give details on basics of good nutrition"),
+            ("🧠 Stress", "Give some tips to manage stress and mental wellness"),
         ]
         pcols = st.columns(3)
         for i, (label, question) in enumerate(cards):
@@ -90,12 +104,12 @@ if len(st.session_state.messages) == 0:
 else:
     col1, col2 = st.columns([1, 12])
     with col1:
-        st.image("./logo.png", width=32)
+        st.image("./logo.png", width=50)
     with col2:
-        st.markdown("<h4 style='margin:0;'>Health Buddy</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='margin:0;  font-family: Times New Roman, Times, serif; font-size: 2.25rem;'>Health Buddy</h4>", unsafe_allow_html=True)
 
 
-# ---- CHAT HISTORY ----
+# CHAT HISTORY 
 for i, msg in enumerate(st.session_state.messages):
 
     if msg["role"] == "user":
@@ -126,7 +140,7 @@ for i, msg in enumerate(st.session_state.messages):
                     st.session_state[edit_key] = True
                     st.rerun()
 
-    else:  # assistant
+    else:  
         with st.chat_message("assistant"):
             st.markdown(msg["content"])
             if i == len(st.session_state.messages) - 1:
@@ -138,7 +152,7 @@ for i, msg in enumerate(st.session_state.messages):
                     st.session_state.messages.append({"role": "assistant", "content": new_answer})
                     st.rerun()
 
-# ---- BOTTOM CHAT INPUT (once conversation started) ----
+# CHAT INPUT
 query = None
 if len(st.session_state.messages) > 0:
     query = st.chat_input("Ask a health/wellness question...")
